@@ -105,6 +105,7 @@ static void rec_to_chop(void);
 #include "port/rec.c"                            /* sound in, straight into CHOP */
 #include "port/load.c"                           /* a WAV dropped on the window, into CHOP */
 #include "port/pages.c"                          /* the pages, the controls, the display */
+#include "port/boot.c"                           /* the boot screen: FM-1 AGAIN in the storm */
 
 static void params_init(void)
 {
@@ -165,6 +166,9 @@ void vibe_on_init(float sample_rate)
 
 void vibe_on_event(const vibe_event *e)          /* (the control flow) */
 {
+    if (e->type == VIBE_EV_NOTE || e->type == VIBE_EV_KEY || e->type == VIBE_EV_PAD || e->type == VIBE_EV_BUTTON ||
+        e->type == VIBE_EV_ENCODER)
+        boot_touch();                            /* (the first touch: the boot screen gives way; the touch still counts) */
     if (e->type == VIBE_EV_PARAM && e->id < NPA) {   /* the DAW's automation, a mapped controller */
         int32_t v = (int32_t)(e->value + (e->value < 0.0f ? -0.5f : 0.5f)) - pa_off(e->id);
         set.p[e->id] = (uint8_t)clamp(v, 0, PA[e->id].top);
@@ -300,5 +304,8 @@ void vibe_on_draw(uint16_t *fb)
 {
     ld_poll();
     rec_poll();
+    vg_begin(fb);
+    if (boot_draw())
+        return;
     ui_draw(fb);
 }
