@@ -125,6 +125,21 @@ static void params_init(void)
     }
     vibe_params(params, NPA);
     vibe_param_groups(p_group);
+    /* the plugin's Editor: the pages as cards in the FM-1's order, the lists as menus, FM-1 Again's blue */
+    {
+        static const vibe_card CARDS[] = {
+            {"FM-1 AGAIN", 6, "the pump, the room, the filter, the tempo, the groove"},
+            {"KEYS", 6, "a soft FM electric piano; one key, a chord"}, {"VOX", 6, "sung syllables, a vowel each key"},
+            {"CHOP", 6, "your recording in slices: REC, drop a WAV, or LOAD"}, {"PUMP", 6, "the sidechain under the kick"},
+            {"GROOVE", 6, "eight grooves, their swing and variations"}, {"RISE", 6, "a reversed stab into the beat"},
+            {"BUILD", 6, "four bars up, then the drop"}, {"SPACE", 4, "a long room"}, {"ECHO", 4, "a tape echo"},
+            {"TAPE", 4, "wow, warmth, dull, hiss"}, {"MIX", 6, "the drums' levels"}, {"SETUP", 6, "the key and the levels"}};
+        vibe_editor_cards(CARDS, (int)(sizeof CARDS / sizeof CARDS[0]));
+        for (i = 0; i < NPA; i++)
+            if (params[i].choices)
+                vibe_editor_control((int)i, VIBE_CTL_MENU);
+        vibe_editor_accent(0x3C3CD2);
+    }
 }
 
 /* the settings, as the host keeps them (in the plugin: in the DAW's project) */
