@@ -69,6 +69,7 @@ static uint8_t lit[4];                           /* a value just turned: its cel
 static char msg[2][32];
 static uint64_t msg_until;
 static float sr_host = 44100.0f;
+static void rec_to_chop(void) { set.inst = IN_CHOP, set.page = PG_CHOP; }
 
 static void say(const char *a, const char *b)
 {
@@ -228,6 +229,8 @@ static void ui_event(const vibe_event *e)
             q_put(Q_PLAY, 0, 0, 0);
         else if (e->id == VB_STOP)
             q_put(Q_STOP, 0, 0, 0);
+        else if (e->id == VB_REC)
+            rec_button();
         else if (e->id == VB_F1)
             page_go(PG_HOME);
         else if (e->id == VB_F2) {
@@ -264,6 +267,18 @@ static void header_text(char *t)                 /* line 1: the trick held, the 
 {
     uint32_t held = pfx.held | gr.pf_auto, step = ck.step & 255u, k;
     t[0] = 0;
+    if (rec_on) {                                /* recording: its seconds */
+        cat(t, "REC ");
+        num(t, (int32_t)(rec_shown_n / REC_RATE));
+        cat(t, ".");
+        num(t, (int32_t)(rec_shown_n % REC_RATE * 10u / REC_RATE));
+        cat(t, " S");
+        return;
+    }
+    if (enc.busy) {
+        cat(t, "CUTTING...");
+        return;
+    }
     if (held) {
         for (k = 0; k < NPF && !(held >> k & 1u); k++)
             ;
@@ -353,7 +368,7 @@ static void ui_draw(uint16_t *fb)
         "ENCODER B", "the page's main choice", "K1-K6", "SOUND PUMP GROOVE BUILD FX MIX", "RETURN", "HOME page",
         "PADS 1-13", "tricks while held", "PADS 14-16", "BUILD, PLAY, STOP", "PADS (CHOP)", "its slices",
         "PLAY / STOP", "the groove", "F2", "build, then drop", "F3", "what the keys play", "F4", "LOOP / SONG",
-        "F5", "save", "F6", "the main choice on", "DATA + ENTER", "every control"};
+        "F5", "save", "F6", "the main choice on", "REC", "IN 1 into CHOP (again: stop)", "DATA + ENTER", "every control"};
     char t[48], v[24];
     uint32_t k, p = set.page;
     vg_begin(fb);

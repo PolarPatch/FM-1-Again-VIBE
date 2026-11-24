@@ -29,7 +29,7 @@ VIBE_PARALLEL_AUDIO;
 #define FS 44100.0f
 
 /* ---- the queue: the control flow's commands to the sound flow */
-enum { Q_NOTE, Q_APPLY, Q_PLAY, Q_STOP, Q_BUILD, Q_TRICK, Q_SLICE };
+enum { Q_NOTE, Q_APPLY, Q_PLAY, Q_STOP, Q_BUILD, Q_TRICK, Q_SLICE, Q_REC };
 typedef struct { uint8_t type, a, b, on; } qcmd;
 #define QN 256u
 static qcmd qbuf[QN];
@@ -98,6 +98,11 @@ static const char *p_group[NPA];
 static int32_t pa_off(uint32_t i) { return PA[i].fmt == FMT_BPM ? 80 : PA[i].fmt == FMT_SEMI ? -12 : PA[i].fmt == FMT_ONE ? 1 : 0; }
 
 static void settings_write(void);
+static void say(const char *a, const char *b);
+static void num(char *d, int32_t v);
+static void cat(char *d, const char *s);
+static void rec_to_chop(void);
+#include "port/rec.c"                            /* sound in, straight into CHOP */
 #include "port/pages.c"                          /* the pages, the controls, the display */
 
 static void params_init(void)
@@ -136,12 +141,15 @@ void vibe_on_init(float sample_rate)
 {
     uint32_t i;
     r_step = FS / (sample_rate > 1000.0f ? sample_rate : FS);
+    rec_step = (float)REC_RATE / (sample_rate > 1000.0f ? sample_rate : FS);
+    sr_host = sample_rate > 1000.0f ? sample_rate : FS;
     vibe_notes(VIBE_NOTES);
     dr_init();
     settings_read();
     chop_factory();
     ch.s = ch_next;
     ch_swap = 0;
+    rec_load();                                  /* (a recording the host kept takes the factory phrase's place) */
     apply();
     params_init();
     for (i = 0; i < NPA; i++)
@@ -197,6 +205,12 @@ static void q_run(const qcmd *c)                 /* (the sound flow) */
         else
             pfx.held &= ~(1u << c->a);
         break;
+    case Q_REC:
+        if (c->a)
+            rec_start();
+        else
+            rec_stop();
+        break;
     case Q_SLICE:                                /* a pad as CHOP's slice: its note, whatever the keys play */
         if (c->on)
             ch_start(53 + (int32_t)c->a, (float)c->b / 127.0f);
@@ -243,7 +257,6 @@ static void engine_block(void)                   /* (the sound flow) 256 frames 
 void vibe_on_audio(const float *in, float *out_l, float *out_r, int frames)
 {
     int k;
-    (void)in;
     while (q_r != q_w) {
         VIBE_ACQUIRE();
         q_run(&qbuf[q_r % QN]);
@@ -270,6 +283,11 @@ void vibe_on_audio(const float *in, float *out_l, float *out_r, int frames)
             r_pos -= (float)w;
         }
     }
+    rec_audio(in, out_l, out_r, frames);
 }
 
-void vibe_on_draw(uint16_t *fb) { ui_draw(fb); }
+void vibe_on_draw(uint16_t *fb)
+{
+    rec_poll();
+    ui_draw(fb);
+}
