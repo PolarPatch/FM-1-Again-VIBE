@@ -42,6 +42,7 @@ enum {
     PA_TWOW, PA_TSAT, PA_TTONE, PA_THISS, PA_TAPE,           /* TAPE */
     PA_RLEN, PA_RBRIGHT, PA_RSUCK, PA_RAUTO,                 /* RISE */
     PA_VARY, PA_BSTYLE, PA_TEMPOUP, PA_PLAYMODE, PA_PADS, PA_RISE_LV, PA_SAVER, PA_CREV,
+    PA_SYNC, PA_CLKOUT,                                      /* MIDI clock (1.1) */
     NPA
 };
 enum { FMT_PCT, FMT_BPM, FMT_LIST, FMT_MS, FMT_KEY, FMT_BARS, FMT_FILTER, FMT_SIZE, FMT_RAW, FMT_SEMI, FMT_ONE, FMT_UP };
@@ -58,6 +59,8 @@ static const char *const PLAYMODE_NAME[2] = {"LOOP", "SONG"};
 static const char *const PADS_NAME[2] = {"NOTES", "PADS"};
 static const char *const SAVER_NAME[2] = {"OFF", "ON"};
 static const char *const CREV_NAME[2] = {"FORWARD", "REVERSE"};
+static const char *const SYNC_NAME[2] = {"AUTO", "INTERNAL"};
+static const char *const ONOFF_NAME[2] = {"OFF", "ON"};
 /* the black keys as pads (loaf-breaker's way): PERFORM's tricks while held, F#3 .. F#5, and their names on the strip */
 #define NPAD 11
 static const uint8_t PAD_TRICK[NPAD] = {PF_STUT8, PF_STUT16, PF_STUT32, PF_REVERSE, PF_TAPESTOP, PF_GATE, PF_LOWSWEEP,
@@ -126,6 +129,8 @@ static const param_t PA[NPA] = {
     [PA_RISE_LV] = {"RISE", 100, 80, FMT_PCT, 0},
     [PA_SAVER] = {"SAVER", 1, 1, FMT_LIST, SAVER_NAME},   /* the screensaver after a minute untouched */
     [PA_CREV] = {"REVERSE", 1, 0, FMT_LIST, CREV_NAME},   /* the slice in hand (chop_cur): its bit in set.crev */
+    [PA_SYNC] = {"SYNC", 1, 0, FMT_LIST, SYNC_NAME},      /* AUTO: a MIDI clock that comes in leads */
+    [PA_CLKOUT] = {"CLOCK OUT", 1, 0, FMT_LIST, ONOFF_NAME},   /* MIDI clock, START and STOP out over USB */
 };
 
 /* what the keys play (ALGORITHM) */

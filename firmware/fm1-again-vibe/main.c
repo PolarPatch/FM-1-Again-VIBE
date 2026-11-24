@@ -90,7 +90,7 @@ static const char *const P_ID[NPA] = {
     "voice_level", "groove", "chop_slice", "chop_length", "chop_pitch", "chop_mode", "echo_time", "echo_again",
     "echo_wear", "echo_level", "echo_mode", "tape_wow", "tape_warmth", "tape_dull", "tape_hiss", "tape",
     "rise_length", "rise_bright", "rise_suck", "rise_auto", "vary", "build_style", "rush", "play_mode", "black_keys",
-    "rise_level", "saver", "chop_reverse"};
+    "rise_level", "saver", "chop_reverse", "sync", "clock_out"};
 _Static_assert(sizeof P_ID / sizeof P_ID[0] == NPA, "an id for every parameter (append only: automation hangs on them)");
 static const char *const KEY_NAMES[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
 static vibe_param params[NPA];
