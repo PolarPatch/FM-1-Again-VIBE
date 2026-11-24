@@ -33,11 +33,13 @@ tools/build.sh builds through a link in `~/.cache`.
 
 ## What the FM-1 cannot, and what this does with it (the challenge's "VIBE features")
 
-1. Done: the 480 x 320 display in FM-1 Again's poster look, the 16 pads (tricks, CHOP's slices), the DAW (parameters,
-   tempo, PLAY, the project keeps the settings), two flows.
-2. Next: **sound in straight into CHOP** (REC: record IN 1, cut it at its onsets, play it on the keys and pads, kept in
-   the project); **long samples** (minutes, not 8 s; WAVs from the host's media); VIBE LINK (the pink FM-1 as its
-   controller: the page and the encoders are reported already); the stage (the screensaver's crowd); the boot screen.
+1. Done (2026-11-25): the 480 x 320 display in FM-1 Again's poster look; the 16 pads (tricks, CHOP's slices); the DAW
+   (every parameter, the Editor's cards, its tempo, PLAY and beat: the groove starts where the song is and keeps its
+   beat; the project keeps the settings and the sample); two flows; **sound in straight into CHOP** (REC: IN 1, cut at
+   its onsets, up to a minute); **long samples** (a WAV dropped on the window, or LOAD from the card and USB sticks);
+   the boot screen; the screensaver (the crowd, after a minute); VIBE FM Link's page and encoders reported.
+2. Next: the stage (SDK 23: the crowd and the waveform big, for a room or a stream); REVERSE per slice on the pads
+   (SHIFT + a pad); CPU on the device; the release (a GitHub release with the .wasm and .zip) and the hub's form.
 
 ## Rules (the SDK's and ours)
 

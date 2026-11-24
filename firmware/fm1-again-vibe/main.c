@@ -106,6 +106,7 @@ static void rec_to_chop(void);
 #include "port/load.c"                           /* a WAV dropped on the window, into CHOP */
 #include "port/pages.c"                          /* the pages, the controls, the display */
 #include "port/boot.c"                           /* the boot screen: FM-1 AGAIN in the storm */
+#include "port/saver.c"                          /* the screensaver: the crowd, after a minute untouched */
 
 static void params_init(void)
 {
@@ -177,10 +178,13 @@ void vibe_on_init(float sample_rate)
     for (i = 0; i < NPA; i++)
         vibe_param_set((int)i, (float)(set.p[i] + pa_off(i)));
     ui_init();
+    saver_init();
 }
 
 void vibe_on_event(const vibe_event *e)          /* (the control flow) */
 {
+    if (saver_touch(e))                          /* (the screensaver up: the first touch only wakes the display) */
+        return;
     if (e->type == VIBE_EV_NOTE || e->type == VIBE_EV_KEY || e->type == VIBE_EV_PAD || e->type == VIBE_EV_BUTTON ||
         e->type == VIBE_EV_ENCODER)
         boot_touch();                            /* (the first touch: the boot screen gives way; the touch still counts) */
@@ -338,7 +342,7 @@ void vibe_on_draw(uint16_t *fb)
     ld_poll();
     rec_poll();
     vg_begin(fb);
-    if (boot_draw())
+    if (boot_draw() || saver_draw(fb))
         return;
     ui_draw(fb);
 }
