@@ -103,6 +103,7 @@ static void num(char *d, int32_t v);
 static void cat(char *d, const char *s);
 static void rec_to_chop(void);
 #include "port/rec.c"                            /* sound in, straight into CHOP */
+#include "port/load.c"                           /* a WAV dropped on the window, into CHOP */
 #include "port/pages.c"                          /* the pages, the controls, the display */
 
 static void params_init(void)
@@ -150,6 +151,11 @@ void vibe_on_init(float sample_rate)
     ch.s = ch_next;
     ch_swap = 0;
     rec_load();                                  /* (a recording the host kept takes the factory phrase's place) */
+    {
+        char p[8];
+        int a, b, c;
+        (void)vibe_media_dropped(p, 0, &a, &b, &c);   /* (SDK 14: files may be dropped on the window) */
+    }
     apply();
     params_init();
     for (i = 0; i < NPA; i++)
@@ -163,6 +169,10 @@ void vibe_on_event(const vibe_event *e)          /* (the control flow) */
         int32_t v = (int32_t)(e->value + (e->value < 0.0f ? -0.5f : 0.5f)) - pa_off(e->id);
         set.p[e->id] = (uint8_t)clamp(v, 0, PA[e->id].top);
         q_put(Q_APPLY, 0, 0, 0);
+        return;
+    }
+    if (e->type == VIBE_EV_MEDIA) {             /* a file dropped, or what was not there yet has come */
+        ld_poll();
         return;
     }
     if (e->type == VIBE_EV_SAVE) {
@@ -288,6 +298,7 @@ void vibe_on_audio(const float *in, float *out_l, float *out_r, int frames)
 
 void vibe_on_draw(uint16_t *fb)
 {
+    ld_poll();
     rec_poll();
     ui_draw(fb);
 }

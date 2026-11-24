@@ -178,7 +178,10 @@ static void ui_init(void)
 
 static void ui_event(const vibe_event *e)
 {
-    int id, r = vf_event(e, &id);
+    int id, r;
+    if (br_event(e))                             /* LOAD's list open: DATA, ENTER, RETURN are its */
+        return;
+    r = vf_event(e, &id);
     if (r != VF_NO)
         return;
     switch (e->type) {
@@ -244,7 +247,9 @@ static void ui_event(const vibe_event *e)
         else if (e->id == VB_F5) {
             settings_write();
             say("SAVED", "");
-        } else if (e->id == VB_F6)
+        } else if (e->id == VB_F6 && set.page == PG_CHOP)
+            br_open();                           /* CHOP: LOAD a WAV from the host's media */
+        else if (e->id == VB_F6)
             param_set_ui(PG[set.page].preset, set.p[PG[set.page].preset] + 1 > PA[PG[set.page].preset].top
                                                   ? 0 : set.p[PG[set.page].preset] + 1);
         break;
@@ -277,6 +282,12 @@ static void header_text(char *t)                 /* line 1: the trick held, the 
     }
     if (enc.busy) {
         cat(t, "CUTTING...");
+        return;
+    }
+    if (ld.on) {
+        cat(t, "LOADING ");
+        num(t, (int32_t)(ld.n / REC_RATE));
+        cat(t, " S");
         return;
     }
     if (held) {
@@ -368,7 +379,7 @@ static void ui_draw(uint16_t *fb)
         "ENCODER B", "the page's main choice", "K1-K6", "SOUND PUMP GROOVE BUILD FX MIX", "RETURN", "HOME page",
         "PADS 1-13", "tricks while held", "PADS 14-16", "BUILD, PLAY, STOP", "PADS (CHOP)", "its slices",
         "PLAY / STOP", "the groove", "F2", "build, then drop", "F3", "what the keys play", "F4", "LOOP / SONG",
-        "F5", "save", "F6", "the main choice on", "REC", "IN 1 into CHOP (again: stop)", "DATA + ENTER", "every control"};
+        "F5", "save", "F6", "the main choice on (CHOP: LOAD a WAV)", "REC", "IN 1 into CHOP (again: stop)", "A WAV", "dropped on the window: CHOP", "DATA + ENTER", "every control"};
     char t[48], v[24];
     uint32_t k, p = set.page;
     vg_begin(fb);
@@ -451,7 +462,7 @@ static void ui_draw(uint16_t *fb)
     /* F1-F6: their captions */
     vg_rect(0, 282, 480, 1, 0x333333);
     for (k = 0; k < 6u; k++)
-        vg_text(F_NAME[k], (int)k * 80 + 40, 293, VG_BOLD, C_W, VG_CENTER);
+        vg_text(k == 5u && p == PG_CHOP ? "LOAD" : F_NAME[k], (int)k * 80 + 40, 293, VG_BOLD, C_W, VG_CENTER);
     /* FOCUS: DATA walks the four values and the soft keys */
     vf_begin();
     for (k = 0; k < 4u; k++)
@@ -459,6 +470,8 @@ static void ui_draw(uint16_t *fb)
     for (k = 0; k < 6u; k++)
         vf_key(VB_F1 + (int)k, (int)k * 80, 284, 80, 36);
     vf_end(C_W);
+    if (br.open)
+        br_draw();
     vibe_link_page(PG[p].title);
     for (k = 0; k < 4u; k++) {
         value_text(PG[p].k[k], v);

@@ -21,6 +21,8 @@ static float rec_acc, rec_sum, rec_peak;
 static uint32_t rec_cnt;
 static float rec_step = REC_RATE / 44100.0f;     /* output samples an input sample */
 static float rec_mon = 0.5f;                     /* what is recorded, heard (half) */
+static char rec_name[16] = "RECORDING";        /* (the control flow's: its name, a file's when one was loaded) */
+static uint8_t rec_loaded;
 
 /* (the sound flow) a block of IN 1 */
 static void rec_audio(const float *in, float *out_l, float *out_r, int frames)
@@ -163,7 +165,7 @@ static void rec_finish(void)                     /* the head, the slices, CHOP t
         rec_agc[16u + 4u * i] = (uint8_t)sl[i], rec_agc[17u + 4u * i] = (uint8_t)(sl[i] >> 8);
         rec_agc[18u + 4u * i] = (uint8_t)(sl[i] >> 16), rec_agc[19u + 4u * i] = (uint8_t)(sl[i] >> 24);
     }
-    memcpy(rec_agc + 144, "RECORDING", 9);
+    memcpy(rec_agc + 144, rec_name, strlen(rec_name) < 15u ? strlen(rec_name) : 15u);
     if (!ch_parse(rec_agc, size, &s))
         return;
     ch_swap = 0;
@@ -179,7 +181,7 @@ static void rec_finish(void)                     /* the head, the slices, CHOP t
         t[0] = 0;
         num(t, (int32_t)ns);
         cat(t, ns == 1u ? " SLICE" : " SLICES");
-        say("RECORDED", t);
+        say(rec_loaded ? "LOADED" : "RECORDED", t);
     }
 }
 
@@ -223,6 +225,8 @@ static void rec_button(void)                     /* (the control flow) REC */
         return;
     }
     vibe_request(VIBE_REQ_AUDIO_INPUT);           /* (IN 1 on: the host asks the player once) */
+    strcpy(rec_name, "RECORDING");
+    rec_loaded = 0;
     q_put(Q_REC, 1, 0, 0);
     say("REC", "IN 1 INTO CHOP");
 }
