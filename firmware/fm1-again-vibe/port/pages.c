@@ -65,6 +65,7 @@ static const char *pg_group(uint32_t i)          /* a parameter's Editor tab and
 /* ---- the state of the display (the control flow's) */
 static uint8_t help;                             /* HOME: the controls' overview */
 static uint8_t pad_held[16];
+static uint8_t shift;                            /* SHIFT held */
 static uint8_t lit[4];                           /* a value just turned: its cell lit (frames left) */
 static char msg[2][32];
 static uint64_t msg_until;
@@ -193,6 +194,16 @@ static void ui_event(const vibe_event *e)
     case VIBE_EV_PAD:
         if (e->id >= 16)
             break;
+        if (set.inst == IN_CHOP && shift) {      /* CHOP: SHIFT + a pad turns its slice around (REVERSE) */
+            if (e->down && e->id < ch.s.nslices) {
+                char t[12] = "SLICE ";
+                set.crev ^= 1u << e->id;
+                q_put(Q_APPLY, 0, 0, 0);
+                num(t, (int32_t)e->id + 1);
+                say(t, set.crev >> e->id & 1u ? "REVERSE" : "FORWARD");
+            }
+            break;
+        }
         if (set.inst == IN_CHOP && e->id < 16) {  /* CHOP on the keys: the pads are its slices */
             uint32_t v = (uint32_t)(e->value * 127.0f + 0.5f);
             q_put(Q_SLICE, e->id, (uint8_t)(v ? v : 100u), e->down);
@@ -220,6 +231,8 @@ static void ui_event(const vibe_event *e)
             param_turn(PG[set.page].preset, e->value);
         break;
     case VIBE_EV_BUTTON:
+        if (e->id == VB_SHIFT)
+            shift = e->down;
         if (!e->down)
             break;
         if (e->id >= VB_K1 && e->id <= VB_K6)
@@ -377,7 +390,7 @@ static void ui_draw(uint16_t *fb)
     static const char *const HELP[] = {
         "KEYS", "play what A chose", "ENCODER 1-4", "the page's values", "ENCODER A", "what the keys play",
         "ENCODER B", "the page's main choice", "K1-K6", "SOUND PUMP GROOVE BUILD FX MIX", "RETURN", "HOME page",
-        "PADS 1-13", "tricks while held", "PADS 14-16", "BUILD, PLAY, STOP", "PADS (CHOP)", "its slices",
+        "PADS 1-13", "tricks while held", "PADS 14-16", "BUILD, PLAY, STOP", "PADS (CHOP)", "its slices (SHIFT: reversed)",
         "PLAY / STOP", "the groove", "F2", "build, then drop", "F3", "what the keys play", "F4", "LOOP / SONG",
         "F5", "save", "F6", "the main choice on (CHOP: LOAD a WAV)", "REC", "IN 1 into CHOP (again: stop)", "A WAV", "dropped on the window: CHOP", "DATA + ENTER", "every control"};
     char t[48], v[24];
