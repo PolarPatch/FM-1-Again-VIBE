@@ -38,8 +38,10 @@ tools/build.sh builds through a link in `~/.cache`.
    beat; the project keeps the settings and the sample); two flows; **sound in straight into CHOP** (REC: IN 1, cut at
    its onsets, up to a minute); **long samples** (a WAV dropped on the window, or LOAD from the card and USB sticks);
    the boot screen; the screensaver (the crowd, after a minute); VIBE FM Link's page and encoders reported.
-2. Next: the stage (SDK 23: the crowd and the waveform big, for a room or a stream); REVERSE per slice on the pads
-   (SHIFT + a pad); CPU on the device; the release (a GitHub release with the .wasm and .zip) and the hub's form.
+   The stage (SDK 23, 960 x 540: the crowd dimmed, the header, the waveform and the pads big); REVERSE per slice
+   (SHIFT + a pad).
+2. Next: CPU and the controls on the device; the release (a GitHub release with the .wasm and .zip) and the hub's
+   form (the user's account, the challenge box); the stage's own clicks (a pad on the stage plays it).
 
 ## Rules (the SDK's and ours)
 

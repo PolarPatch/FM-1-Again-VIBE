@@ -107,6 +107,7 @@ static void rec_to_chop(void);
 #include "port/pages.c"                          /* the pages, the controls, the display */
 #include "port/boot.c"                           /* the boot screen: FM-1 AGAIN in the storm */
 #include "port/saver.c"                          /* the screensaver: the crowd, after a minute untouched */
+#include "port/stage.c"                          /* the stage: the crowd, the bar and the waveform, big */
 
 static void params_init(void)
 {
@@ -179,6 +180,7 @@ void vibe_on_init(float sample_rate)
         vibe_param_set((int)i, (float)(set.p[i] + pa_off(i)));
     ui_init();
     saver_init();
+    stage_init();
 }
 
 void vibe_on_event(const vibe_event *e)          /* (the control flow) */

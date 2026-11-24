@@ -19,6 +19,11 @@ the pads, builds and drops.
   kick out, drums out), BUILD, PLAY and STOP; with CHOP on the keys, its slices.
 - **The DAW:** every value is a parameter to automate; the DAW's tempo and PLAY lead; the project keeps the settings.
 - **The big display** in FM-1 Again's black-and-white poster look, the sound drawn as an audio editor draws a track.
+- **The stage** (the Web Player, a room, a stream): the crowd dimmed behind the bar, the build, the trick held, the
+  waveform and the pads, big.
+- **The boot screen and the screensaver** of the FM-1: FM-1 AGAIN in its storm; the crowd after a minute untouched.
+
+![The stage: STUTTER 1/8 held, the tempo, the groove, the waveform and the pads over the crowd](docs/stage.png)
 
 ## The controls
 
