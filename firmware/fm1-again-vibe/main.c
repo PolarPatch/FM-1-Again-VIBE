@@ -239,18 +239,36 @@ static void q_run(const qcmd *c)                 /* (the sound flow) */
 }
 
 static int host_playing;                         /* the DAW's (or a MIDI clock's) transport, last block */
-static void follow_host(void)                    /* (the sound flow) the host's tempo and its PLAY, when it gives them */
+/* (the sound flow) the host's tempo, PLAY and beat, when it gives them: the groove starts where the song is (its
+ * sixteenth: the bar's place in the pattern) and is pulled onto the host's beat a little each block */
+static void follow_host(void)
 {
     const vibe_transport_info *t = vibe_transport();
-    if (!t || !t->has)
+    float theirs;
+    if (!t || !t->has) {
+        host_playing = 0;
         return;
+    }
     if (t->bpm > 20.0f)
-        bpm_base = t->bpm;
-    if (t->playing && !host_playing && !ck.run)
+        bpm_base = t->bpm - gr.bpm_add;          /* (the host's tempo: BUILD's RUSH does not move it) */
+    theirs = (float)(t->beat * 4.0);             /* (sixteenths since the song's start) */
+    if (t->playing && !host_playing) {           /* the host starts: so do we, at its place */
+        float f = theirs - (float)(int32_t)theirs;
         ck_start();
-    else if (!t->playing && host_playing && ck.run) {
+        if (theirs > 0.0f) {
+            ck.step = (uint32_t)(int32_t)theirs - 1u;
+            ck.len = ck_step_len(ck.step + 1u);
+            ck.left = (1.0f - f) * ck.len;
+            ck.step++;
+            ck.left = ck.left > 0.0f ? ck.left : 1.0f;
+        }
+    } else if (!t->playing && host_playing && ck.run) {
         ck.run = 0;
         gr_stop();
+    } else if (t->playing && ck.run) {           /* playing: our sixteenths onto the host's */
+        float ours = (float)ck.step + 1.0f - ck.left / ck.len, err = ours - theirs;
+        if (err > -2.0f && err < 2.0f)
+            ck.left += err * ck.len * 0.1f;
     }
     host_playing = t->playing;
 }
