@@ -18,11 +18,20 @@
 #define PLAT_POOL
 static inline int32_t clamp(int32_t v, int32_t lo, int32_t hi) { return v < lo ? lo : v > hi ? hi : v; }
 #include "fastmath.h"
+/* the groove's notes to the host's MIDI out (engine/groove.h; the sound flow: vibe_midi_send is safe there) */
+static void gr_out(uint32_t ch, uint32_t st, uint32_t d1, uint32_t d2);
+#define GR_NOTE_OUT(ch, note, vel) gr_out((ch), (vel) ? 0x90u : 0x80u, (note), (vel))
+#define GR_CC_OUT(ch, cc, val) gr_out((ch), 0xB0u, (cc), (val))
 #include "core.c"
 
 #include "vibe.h"
 #include "vibe_gfx.h"
 #include "vibe_dsp.h"
+static void gr_out(uint32_t ch, uint32_t st, uint32_t d1, uint32_t d2)
+{
+    if (set.p[PA_NOTESOUT])
+        vibe_midi_send((uint8_t)(st | ch), (uint8_t)(d1 & 127u), (uint8_t)(d2 & 127u));
+}
 
 VIBE_PARALLEL_AUDIO;
 
@@ -90,7 +99,7 @@ static const char *const P_ID[NPA] = {
     "voice_level", "groove", "chop_slice", "chop_length", "chop_pitch", "chop_mode", "echo_time", "echo_again",
     "echo_wear", "echo_level", "echo_mode", "tape_wow", "tape_warmth", "tape_dull", "tape_hiss", "tape",
     "rise_length", "rise_bright", "rise_suck", "rise_auto", "vary", "build_style", "rush", "play_mode", "black_keys",
-    "rise_level", "saver", "chop_reverse", "sync", "clock_out"};
+    "rise_level", "saver", "chop_reverse", "sync", "clock_out", "notes_out"};
 _Static_assert(sizeof P_ID / sizeof P_ID[0] == NPA, "an id for every parameter (append only: automation hangs on them)");
 static const char *const KEY_NAMES[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
 static vibe_param params[NPA];

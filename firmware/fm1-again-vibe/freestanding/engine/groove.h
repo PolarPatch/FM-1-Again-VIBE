@@ -100,6 +100,26 @@ static struct {
 } gr = {.rnd = 0xC0FFEEu, .flags = 0xFF, .song_lp = 20000.0f, .bd_bars = 4, .pat = 1, .prog = 1, .key = 9, .rhythm = CR_HOLD, .build_bars = 4,
         .lv = {1.0f, 0.8f, 0.6f, 0.6f, 0.55f, 0.6f, 0.6f}, .chord = {-1, -1, -1, -1, -1}, .hp_fc = 20.0f};
 
+/* the groove's notes out (the includer's: the FM-1 sends them over USB and Bluetooth, VIBE to its MIDI out; none: nothing):
+ * GR_NOTE_OUT(channel 0..15, note, velocity 0..127, 0 = off), GR_CC_OUT(channel, cc, value). The drums on channel 2
+ * (General MIDI's drum notes, an off right after each hit), the chords on 4, RISE on 5; the keys stay the includer's
+ * (channel 1) */
+#ifndef GR_NOTE_OUT
+#define GR_NOTE_OUT(ch, note, vel) ((void)0)
+#endif
+#ifndef GR_CC_OUT
+#define GR_CC_OUT(ch, cc, val) ((void)0)
+#endif
+#define GR_CH_DRUMS 1u
+#define GR_CH_CHORDS 3u
+#define GR_CH_RISE 4u
+static const uint8_t GR_GM[7] = {36, 39, 38, 42, 46, 70, 37};   /* kick, clap, snare, closed hat, open hat, maracas, rim */
+static void gr_drum_out(uint32_t d, float v)
+{
+    GR_NOTE_OUT(GR_CH_DRUMS, GR_GM[d], (uint32_t)(v * 127.0f + 0.5f) ? (uint32_t)(v * 127.0f + 0.5f) : 1u);
+    GR_NOTE_OUT(GR_CH_DRUMS, GR_GM[d], 0u);
+}
+
 static float gr_vel(char c) { return c == 'X' ? 1.0f : c == 'x' ? 0.78f : c == 'g' ? 0.34f : 0.0f; }
 
 static void gr_chord_off(void)
@@ -108,6 +128,7 @@ static void gr_chord_off(void)
     for (i = 0; i < 5u; i++)
         if (gr.chord[i] >= 0) {
             kp_stop(gr.chord[i], 1);
+            GR_NOTE_OUT(GR_CH_CHORDS, (uint32_t)gr.chord[i], 0u);
             gr.chord[i] = -1;
         }
 }
@@ -124,6 +145,7 @@ static void gr_chord_on(uint32_t which, float vel)
             break;
         gr.chord[i] = (int8_t)(root + iv);
         kp_start(root + iv, vel, 1);
+        GR_NOTE_OUT(GR_CH_CHORDS, (uint32_t)(root + iv), (uint32_t)(vel * 127.0f + 0.5f));
     }
 }
 
@@ -149,6 +171,8 @@ static void gr_drop(void)
     gr.drop_step = ck.step;
     dr_hit(DR_OPEN, 1.0f);
     dr_hit(DR_CLAP, 1.0f);
+    gr_drum_out(DR_OPEN, 1.0f);
+    gr_drum_out(DR_CLAP, 1.0f);
 }
 
 static inline uint32_t gr_rand(void)
@@ -218,8 +242,11 @@ static void gr_step(uint32_t step)
             else
                 go = (bar + 1u) % (rs.autom == RA_8BARS ? 8u : 4u) == 0u;
         }
-        if (go)
+        if (go) {
             rs_start(40 + (int32_t)((gr.key + 5u) % 12u), (uint32_t)((float)l16 * SR * 15.0f / ck.bpm), 0.9f);
+            GR_NOTE_OUT(GR_CH_RISE, 40u + (gr.key + 5u) % 12u, 115u);
+            GR_NOTE_OUT(GR_CH_RISE, 40u + (gr.key + 5u) % 12u, 0u);
+        }
     }
     /* the chords: one every two bars */
     if (gr.prog && !gr.hush && (gr.flags & SF_CHORDS)) {
@@ -267,6 +294,7 @@ static void gr_step(uint32_t step)
         }
         if (v > 0.0f) {
             dr_hit(d, v);
+            gr_drum_out(d, v);
             if (d == DR_KICK && pm.src == PS_KICK)
                 pm_pull();
         }
@@ -279,6 +307,9 @@ static void gr_step(uint32_t step)
 static void gr_stop(void)
 {
     gr_chord_off();
+    GR_CC_OUT(GR_CH_DRUMS, 123u, 0u);            /* (all notes off on the groove's channels: nothing hangs) */
+    GR_CC_OUT(GR_CH_CHORDS, 123u, 0u);
+    GR_CC_OUT(GR_CH_RISE, 123u, 0u);
     gr.bd = BD_NONE;
     gr.drop_now = 0;
     gr.hp_fc = 20.0f;

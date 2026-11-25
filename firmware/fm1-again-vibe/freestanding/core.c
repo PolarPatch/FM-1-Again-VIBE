@@ -42,7 +42,8 @@ enum {
     PA_TWOW, PA_TSAT, PA_TTONE, PA_THISS, PA_TAPE,           /* TAPE */
     PA_RLEN, PA_RBRIGHT, PA_RSUCK, PA_RAUTO,                 /* RISE */
     PA_VARY, PA_BSTYLE, PA_TEMPOUP, PA_PLAYMODE, PA_PADS, PA_RISE_LV, PA_SAVER, PA_CREV,
-    PA_SYNC, PA_CLKOUT,                                      /* MIDI clock (1.1) */
+    PA_SYNC, PA_CLKOUT,                                      /* MIDI clock (1.0.1) */
+    PA_NOTESOUT,                                             /* the groove's notes out (1.0.2) */
     NPA
 };
 enum { FMT_PCT, FMT_BPM, FMT_LIST, FMT_MS, FMT_KEY, FMT_BARS, FMT_FILTER, FMT_SIZE, FMT_RAW, FMT_SEMI, FMT_ONE, FMT_UP };
@@ -131,6 +132,7 @@ static const param_t PA[NPA] = {
     [PA_CREV] = {"REVERSE", 1, 0, FMT_LIST, CREV_NAME},   /* the slice in hand (chop_cur): its bit in set.crev */
     [PA_SYNC] = {"SYNC", 1, 0, FMT_LIST, SYNC_NAME},      /* AUTO: a MIDI clock that comes in leads */
     [PA_CLKOUT] = {"CLOCK OUT", 1, 0, FMT_LIST, ONOFF_NAME},   /* MIDI clock, START and STOP out over USB */
+    [PA_NOTESOUT] = {"NOTES OUT", 1, 1, FMT_LIST, ONOFF_NAME},   /* the groove's notes out: drums 2, chords 4, RISE 5 */
 };
 
 /* what the keys play (ALGORITHM) */
