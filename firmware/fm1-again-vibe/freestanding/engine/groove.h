@@ -101,7 +101,7 @@ static struct {
         .lv = {1.0f, 0.8f, 0.6f, 0.6f, 0.55f, 0.6f, 0.6f}, .chord = {-1, -1, -1, -1, -1}, .hp_fc = 20.0f};
 
 /* the groove's notes out (the includer's: the FM-1 sends them over USB and Bluetooth, VIBE to its MIDI out; none: nothing):
- * GR_NOTE_OUT(channel 0..15, note, velocity 0..127, 0 = off), GR_CC_OUT(channel, cc, value). The drums on channel 2
+ * GR_NOTE_OUT(channel 0..15, note, velocity 0..127, 0 = off), GR_CC_OUT(channel, cc, value). The drums on channel 10
  * (General MIDI's drum notes, an off right after each hit), the chords on 4, RISE on 5; the keys stay the includer's
  * (channel 1) */
 #ifndef GR_NOTE_OUT
@@ -110,7 +110,7 @@ static struct {
 #ifndef GR_CC_OUT
 #define GR_CC_OUT(ch, cc, val) ((void)0)
 #endif
-#define GR_CH_DRUMS 1u
+#define GR_CH_DRUMS 9u                           /* (channel 10: General MIDI's drums) */
 #define GR_CH_CHORDS 3u
 #define GR_CH_RISE 4u
 static const uint8_t GR_GM[7] = {36, 39, 38, 42, 46, 70, 37};   /* kick, clap, snare, closed hat, open hat, maracas, rim */
