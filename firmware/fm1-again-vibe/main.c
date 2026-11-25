@@ -38,7 +38,7 @@ VIBE_PARALLEL_AUDIO;
 #define FS 44100.0f
 
 /* ---- the queue: the control flow's commands to the sound flow */
-enum { Q_NOTE, Q_APPLY, Q_PLAY, Q_STOP, Q_BUILD, Q_TRICK, Q_SLICE, Q_REC };
+enum { Q_NOTE, Q_APPLY, Q_PLAY, Q_STOP, Q_BUILD, Q_TRICK, Q_SLICE, Q_REC, Q_MIDI };
 typedef struct { uint8_t type, a, b, on; } qcmd;
 #define QN 256u
 static qcmd qbuf[QN];
@@ -209,6 +209,14 @@ void vibe_on_event(const vibe_event *e)          /* (the control flow) */
         ld_poll();
         return;
     }
+    if (e->type == VIBE_EV_MIDI) {               /* bend, the mod wheel, CC 7, the pedal, all notes off */
+        q_put(Q_MIDI, e->midi[0], e->midi[1], e->midi[2]);
+        return;
+    }
+    if (e->type == VIBE_EV_PEDAL && e->id == VIBE_PEDAL_SWITCH) {   /* the VIBE's own pedal: sustain */
+        q_put(Q_MIDI, 0xB0, 64, e->down ? 127 : 0);
+        return;
+    }
     if (e->type == VIBE_EV_STAGE) {             /* a click on the stage's pads */
         stage_event(e);
         return;
@@ -252,6 +260,12 @@ static void q_run(const qcmd *c)                 /* (the sound flow) */
             pfx.held |= 1u << c->a;
         else
             pfx.held &= ~(1u << c->a);
+        break;
+    case Q_MIDI:                                 /* a controller or the bend (the MIDI basics: engine/midi.h) */
+        if ((c->a & 0xF0u) == 0xB0u)
+            mb_cc(c->b, c->on);
+        else if ((c->a & 0xF0u) == 0xE0u)
+            mb_bend(c->b | (uint32_t)(c->on & 0x7Fu) << 7);
         break;
     case Q_REC:
         if (c->a)

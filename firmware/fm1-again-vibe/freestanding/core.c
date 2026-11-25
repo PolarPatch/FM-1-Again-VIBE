@@ -18,6 +18,7 @@
 #include "dsp/tape.h"
 #include "engine/clock.h"
 #include "engine/drums.h"
+#include "engine/midi.h"   /* the MIDI basics: bend, the mod wheel, sustain, volume */
 #include "engine/keys.h"
 #include "engine/vox.h"
 #include "engine/chop.h"
@@ -232,6 +233,14 @@ static volatile uint8_t ch_swap;
 static void play_note(int32_t note, uint32_t vel, int on, int from_isr)
 {
     uint32_t i;
+    if (note >= 0 && note < 128) {               /* the sustain pedal: an off waits for it to let go */
+        if (on)
+            mb.held[note >> 5] &= ~(1u << (note & 31));
+        else if (mb.sus) {
+            mb.held[note >> 5] |= 1u << (note & 31);
+            return;
+        }
+    }
     if (on)
         last_note = note;
     else if (last_note == note)
@@ -293,6 +302,35 @@ static void play_note(int32_t note, uint32_t vel, int on, int from_isr)
     }
 }
 
+/* (the audio interrupt: the MIDI in) a controller: the mod wheel, volume, the pedal, all notes off */
+static void mb_cc(uint32_t cc, uint32_t v)
+{
+    uint32_t i, k;
+    if (cc == 1u)
+        mb.mod = (float)v / 127.0f;
+    else if (cc == 7u)
+        mb.vol = (float)v / 127.0f;
+    else if (cc == 64u) {
+        mb.sus = v >= 64u;
+        if (!mb.sus)                             /* let go: the offs it held */
+            for (k = 0; k < 4u; k++)
+                for (i = 0; i < 32u; i++)
+                    if (mb.held[k] >> i & 1u) {
+                        mb.held[k] &= ~(1u << i);
+                        play_note((int32_t)(k * 32u + i), 0, 0, 1);
+                    }
+    } else if (cc == 120u || cc == 123u) {       /* all sound / notes off: every voice let go */
+        mb.sus = 0;
+        mb.held[0] = mb.held[1] = mb.held[2] = mb.held[3] = 0;
+        for (i = 0; i < KP_NV; i++)
+            kp.v[i].held = 0;
+        for (i = 0; i < VX_NV; i++)
+            vx.v[i].held = 0;
+        for (i = 0; i < CH_NV; i++)
+            ch.v[i].held = 0;
+    }
+}
+
 /* the mix's buses, -1 .. 1: the kick (never pumped), the drums, the pumped (keys, voice), the reverb's send and
  * return */
 static float b_kl[APP_BLOCK], b_kr[APP_BLOCK], b_dl[APP_BLOCK], b_dr[APP_BLOCK], b_pl[APP_BLOCK], b_pr[APP_BLOCK];
@@ -331,6 +369,7 @@ static void core_render(uint32_t n, float *p0, float *p1)
         want_stop = 0;
         gr_stop();
     }
+    mb_block(n);                                 /* the bend and the vibrato for this block's voices */
     for (i = 0; i < n; i++)
         b_kl[i] = b_kr[i] = b_dl[i] = b_dr[i] = b_pl[i] = b_pr[i] = b_send[i] = b_rl[i] = b_rr[i] = 0.0f;
     /* the steps, each where it falls in the block: the engines rendered up to it, then the step played */
@@ -405,8 +444,8 @@ static void core_render(uint32_t n, float *p0, float *p1)
     pf_render(b_kl, b_kr, n, gr.pf_auto);        /* PERFORM's tricks (the pads, SEL + a white key; the build's) */
     tape_render(b_kl, b_kr, n);                  /* TAPE over everything */
     for (i = 0; i < n; i++) {
-        b_kl[i] = fm_tanhf(1.3f * b_kl[i]);      /* a soft glue, never past full scale */
-        b_kr[i] = fm_tanhf(1.3f * b_kr[i]);
+        b_kl[i] = fm_tanhf(1.3f * b_kl[i]) * mb.vol;   /* a soft glue, never past full scale; CC 7 */
+        b_kr[i] = fm_tanhf(1.3f * b_kr[i]) * mb.vol;
     }
     *p0 = pos0;
     *p1 = pos1;

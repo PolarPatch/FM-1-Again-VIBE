@@ -92,6 +92,7 @@ static void kp_post(int32_t note, uint32_t vel, uint32_t src, int on)
 }
 
 /* n frames of the voices into l, r (the pumped pair) and send */
+static float kp_tr[APP_BLOCK];                   /* (the tremolo of a block) */
 static void kp_render(float *l, float *r, float *send, uint32_t n)
 {
     uint32_t i, j;
@@ -104,27 +105,33 @@ static void kp_render(float *l, float *r, float *send, uint32_t n)
         else
             kp_start((int32_t)(e & 127u), (float)((e >> 8) & 127u) / 127.0f, e >> 16);
     }
+    {                                            /* the tremolo, the same for every voice: once a frame, not once a voice */
+        float ph = kp.lfo;
+        for (i = 0; i < n; i++, ph += lfo_inc)
+            kp_tr[i] = kp.trem * 0.5f * fm_sin_turns(ph);
+    }
     for (j = 0; j < KP_NV; j++) {
         kp_voice_t *v = &kp.v[j];
-        float ph = kp.lfo;
         if (v->note < 0)
             continue;
+        float inc = v->inc * mb_pitch;           /* (the bend and the vibrato, this block's) */
         for (i = 0; i < n; i++) {
-            float m = fm_sin_turns(v->ph_m) * v->ix, t = fm_sin_turns(v->ph_t) * v->tine, s, tr;
+            float m = fm_sin_turns(v->ph_m) * v->ix, t = v->tine > 0.0f ? fm_sin_turns(v->ph_t) * v->tine : 0.0f, s, tr;
             s = fm_sin_turns(v->ph_c + m + t);
-            v->ph_c += v->inc;
-            v->ph_m += v->inc;
-            v->ph_t += 14.0f * v->inc;
+            v->ph_c += inc;
+            v->ph_m += inc;
+            v->ph_t += 14.0f * inc;
             v->ph_c -= v->ph_c >= 1.0f ? 1.0f : 0.0f;
             v->ph_m -= v->ph_m >= 1.0f ? 1.0f : 0.0f;
             v->ph_t -= fm_floorf(v->ph_t);
             v->ix = 0.18f * (0.4f + kp.tone) + (v->ix - 0.18f * (0.4f + kp.tone)) * v->ix_dk;
             v->tine *= 0.9985f;
+            if (v->tine < 1e-6f)                 /* (the tine has died away: its sine no longer worked out) */
+                v->tine = 0.0f;
             v->lp += (s - v->lp) * lpc;
             s = v->lp * v->amp * lvl;
             v->amp *= v->held ? v->dk : v->rel;
-            tr = kp.trem * 0.5f * fm_sin_turns(ph);
-            ph += lfo_inc;
+            tr = kp_tr[i];
             l[i] += s * (1.0f - v->pan + tr);
             r[i] += s * (v->pan - tr);
             send[i] += s * 0.35f;

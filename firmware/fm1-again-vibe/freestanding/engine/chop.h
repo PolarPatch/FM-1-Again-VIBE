@@ -227,7 +227,7 @@ static void ch_render(float *l, float *r, float *send, uint32_t n)
                 v->pos -= 1.0f;
             }
             s = v->s0 + (v->s1 - v->s0) * v->pos;
-            v->pos += v->inc;
+            v->pos += v->inc * mb_pitch;
             env = v->t < 132u ? (float)v->t / 132.0f : 1.0f;   /* 3 ms in */
             if (!open)
                 v->amp *= 0.995f;                /* ~5 ms out */

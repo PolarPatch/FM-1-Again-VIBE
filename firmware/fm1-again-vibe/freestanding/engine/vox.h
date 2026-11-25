@@ -99,7 +99,7 @@ static void vx_render(float *l, float *r, float *send, uint32_t n)
             v->g[k] = VW_G[v->from][k] + (VW_G[v->to][k] - VW_G[v->from][k]) * v->glide;
         }
         v->scoop *= 0.6f;
-        inc = v->inc * fm_exp2f(v->scoop / 12.0f);
+        inc = v->inc * fm_exp2f(v->scoop / 12.0f) * mb_pitch;
         for (i = 0; i < n; i++) {
             float src, s = 0.0f, bp;
             int open = v->t < v->gate && (v->held || v->t < (uint32_t)(0.06f * SR));
