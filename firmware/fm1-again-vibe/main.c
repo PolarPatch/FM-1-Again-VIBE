@@ -209,6 +209,10 @@ void vibe_on_event(const vibe_event *e)          /* (the control flow) */
         ld_poll();
         return;
     }
+    if (e->type == VIBE_EV_STAGE) {             /* a click on the stage's pads */
+        stage_event(e);
+        return;
+    }
     if (e->type == VIBE_EV_SAVE) {
         settings_write();
         return;

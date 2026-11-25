@@ -12,6 +12,25 @@ static uint64_t st_shown;
 
 static void stage_init(void) { vibe_stage(st_fb, ST_W, ST_H, 0x000000, 0); }
 
+/* (vibe_on_event) a click on the stage: a pad there is the pad (held while the pointer is down) */
+static int st_pad = -1;
+static void stage_event(const vibe_event *e)
+{
+    int x = VIBE_STAGE_X(e), y = VIBE_STAGE_Y(e), k = (x - 40) / 55;
+    vibe_event p;
+    memset(&p, 0, sizeof p);
+    p.type = VIBE_EV_PAD;
+    if (e->id == VIBE_STAGE_DOWN && y >= 470 && y < 510 && x >= 40 && k < 16 && (x - 40) % 55 < 50) {
+        st_pad = k;
+        p.id = (uint8_t)k, p.down = 1, p.value = 0.8f;
+        ui_event(&p);
+    } else if (e->id == VIBE_STAGE_UP && st_pad >= 0) {
+        p.id = (uint8_t)st_pad, p.down = 0;
+        st_pad = -1;
+        ui_event(&p);
+    }
+}
+
 void vibe_on_stage(uint16_t *fb, int w, int h)
 {
     uint64_t now = vibe_frames();

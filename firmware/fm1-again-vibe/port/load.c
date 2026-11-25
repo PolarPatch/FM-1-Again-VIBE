@@ -167,6 +167,11 @@ static void br_list(void)                        /* the list for br.path (again 
         br.pending = 1;
         return;
     }
+    if (!br.path[0] && vibe_media_add(0) == 1 && br.n < BR_N) {   /* (SDK 22: the browser's own folder, offered) */
+        strcpy(br.name[br.n], "+ ADD FOLDER");
+        strcpy(br.key[br.n], "+");
+        br.dir[br.n++] = 0;
+    }
     if (n <= 0)
         return;
     br_buf[n] = 0;
@@ -216,6 +221,10 @@ static void br_enter(void)
     char p[VIBE_MEDIA_PATH];
     if (br.sel >= br.n)
         return;
+    if (!br.path[0] && !strcmp(br.key[br.sel], "+")) {   /* the browser asks the user for a folder (a new source) */
+        vibe_media_add(1);
+        return;
+    }
     if (!br.path[0])
         strcpy(p, br.key[br.sel]);
     else {
