@@ -45,6 +45,7 @@ enum {
     PA_VARY, PA_BSTYLE, PA_TEMPOUP, PA_PLAYMODE, PA_PADS, PA_RISE_LV, PA_SAVER, PA_CREV,
     PA_SYNC, PA_CLKOUT,                                      /* MIDI clock (1.0.1) */
     PA_NOTESOUT,                                             /* the groove's notes out (1.0.2) */
+    PA_MIDICH,                                               /* the MIDI channel (1.0.2) */
     NPA
 };
 enum { FMT_PCT, FMT_BPM, FMT_LIST, FMT_MS, FMT_KEY, FMT_BARS, FMT_FILTER, FMT_SIZE, FMT_RAW, FMT_SEMI, FMT_ONE, FMT_UP };
@@ -63,6 +64,8 @@ static const char *const SAVER_NAME[2] = {"OFF", "ON"};
 static const char *const CREV_NAME[2] = {"FORWARD", "REVERSE"};
 static const char *const SYNC_NAME[2] = {"AUTO", "INTERNAL"};
 static const char *const ONOFF_NAME[2] = {"OFF", "ON"};
+static const char *const MIDICH_NAME[17] = {"OMNI", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13",
+                                           "14", "15", "16"};
 /* the black keys as pads (loaf-breaker's way): PERFORM's tricks while held, F#3 .. F#5, and their names on the strip */
 #define NPAD 11
 static const uint8_t PAD_TRICK[NPAD] = {PF_STUT8, PF_STUT16, PF_STUT32, PF_REVERSE, PF_TAPESTOP, PF_GATE, PF_LOWSWEEP,
@@ -133,7 +136,8 @@ static const param_t PA[NPA] = {
     [PA_CREV] = {"REVERSE", 1, 0, FMT_LIST, CREV_NAME},   /* the slice in hand (chop_cur): its bit in set.crev */
     [PA_SYNC] = {"SYNC", 1, 0, FMT_LIST, SYNC_NAME},      /* AUTO: a MIDI clock that comes in leads */
     [PA_CLKOUT] = {"CLOCK OUT", 1, 0, FMT_LIST, ONOFF_NAME},   /* MIDI clock, START and STOP out over USB */
-    [PA_NOTESOUT] = {"NOTES OUT", 1, 1, FMT_LIST, ONOFF_NAME},   /* the groove's notes out: drums 2, chords 4, RISE 5 */
+    [PA_NOTESOUT] = {"NOTES OUT", 1, 1, FMT_LIST, ONOFF_NAME},   /* the groove's notes out: drums 10, chords 4, RISE 5 */
+    [PA_MIDICH] = {"CHANNEL", 16, 0, FMT_LIST, MIDICH_NAME},   /* in: OMNI or one; out: the keys' (OMNI: 1) */
 };
 
 /* what the keys play (ALGORITHM) */
